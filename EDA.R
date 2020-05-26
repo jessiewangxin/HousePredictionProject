@@ -1,6 +1,9 @@
 library(ggplot2)
 library(dplyr)
 library(corrplot)
+library(purrr)
+library(tidyr)
+library(car)
 
 #MISSING VALUES 
 #checking missing values
@@ -64,20 +67,20 @@ numeric_data = data_use %>% select(
   LotFrontage, MasVnrArea,
   LotArea, BsmtFinSF2, BsmtUnfSF, TotalBsmtSF, X1stFlrSF, X2ndFlrSF, LowQualFinSF, GrLivArea,
   BsmtFullBath, BsmtHalfBath, FullBath, HalfBath, BedroomAbvGr, KitchenAbvGr, TotRmsAbvGrd, Fireplaces,
-  GarageCars, GarageArea, TotalPorchSF, PoolArea, MiscVal)
+  GarageCars, GarageArea, TotalPorchSF, PoolArea, MiscVal, SalePrice)
 
 cc = cor(numeric_data, method = "spearman")
 corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average",addrect = 1, tl.cex = 0.5)
 
+set_1 = data_use %>% select(X2ndFlrSF, HalfBath, BedroomAbvGr, FullBath, GrLivArea, TotRmsAbvGrd)
+set_2 = data_use %>% select(GarageCars, GarageArea)
 
-#Relationship between time and SalePrice
-ggplot(data_use, aes(x=YearRemodAdd, y=SalePrice)) + 
-  geom_line() +
-  xlab("Time") + 
-  ylab("SalePrice") +
-  theme_bw() +
-  geom_smooth()
+#ScatterPlotMatrix
+scatterplotMatrix(set_1)
+scatterplotMatrix(set_2)
 
+
+#Relationship between year built or remodeled and SalePrice
 ggplot(data_use, aes(x=YearBuilt, y=SalePrice)) + 
   geom_line() +
   xlab("Time") + 
@@ -85,33 +88,86 @@ ggplot(data_use, aes(x=YearBuilt, y=SalePrice)) +
   theme_bw() +
   geom_smooth()
 
+ggplot(data_use, aes(x=YearRemodAdd, y=SalePrice)) + 
+  geom_line() +
+  xlab("Time") + 
+  ylab("SalePrice") +
+  theme_bw() +
+  geom_smooth()
+
+#numeric variables 
+data_use %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value, fill='pink')) +
+  facet_wrap(~ key, scales = "free") +
+  geom_bar() + 
+  xlab('') + 
+  ylab('') +
+  theme_bw()
+
+#character variables
+data_use %>%
+  keep(is.character) %>% 
+  gather() %>% 
+  ggplot(aes(value, fill='pink')) +
+  facet_wrap(~ key, scales = "free") +
+  geom_bar() + 
+  xlab('') + 
+  ylab('') +
+  theme_bw()
+
+#MoSold, YrSold
+data_use %>%
+  select(MoSold, YrSold) %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value, fill='pink')) +
+  facet_wrap(~ key, scales = "free") +
+  geom_histogram() + 
+  xlab('') + 
+  ylab('') +
+  theme_bw()
+
+data_use %>%
+  select(MoYrSold) %>% 
+  gather() %>% 
+  ggplot(aes(value, fill='pink')) +
+  geom_histogram(stat='count') + 
+  xlab('') + 
+  ylab('') +
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+
+data_use %>%
+  select(Neighborhood, SalePrice) %>% 
+  group_by(Neighborhood) %>% 
+  summarise(avg_price=mean(SalePrice)) %>% 
+  ggplot(aes(x = reorder(Neighborhood,avg_price), y = avg_price)) + 
+  geom_col(aes(fill = avg_price), width = 0.7) + 
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none") +        
+  xlab("") +
+  ylab("Mean Price by Neighborhoods") 
 
 
+#Checking distribution of SalePrice 
 g <- ggplot(data_use, aes(x=SalePrice)) + 
   geom_histogram(bins=200, fill="#66ffcc") + 
   xlab('Sale Price') + 
   ylab('') +
   theme_classic() 
-#   +
-#   stat_function(fun=dnorm,
-#                 color="black",
-#                 args=list(mean=mean(data_use$SalePrice), 
-#                           sd=sd(data_use$SalePrice)))
+
 g
 
+#checking distribution of log transformation of SalePrice
 glog <- ggplot(data_use, aes(x=log(SalePrice))) + 
   geom_histogram(bins=200, fill="#66ffcc") + 
   xlab('Log of Sale Price') + 
   ylab('') +
   theme_classic() 
-  # +
-  # stat_function(fun=dnorm,
-  #               color="black",
-  #               args=list(mean=mean(log(data_use$SalePrice)), 
-  #                         sd=sd(log(data_use$SalePrice))))
+
 glog
-
-
 
 
 #####################################################################################

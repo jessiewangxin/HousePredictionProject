@@ -63,6 +63,7 @@ imputevalues<-function(data_use){
                                  round(44.067376+0.002688*data_use$LotArea,0),data_use$LotFrontage) 
   data_use$LotFrontage <- NULL
   data_use$LotFrontage <- data_use$LotFrontage.impute
+  data_use$LotFrontage.impute <- NULL
   
   #MasVnrType and MasVnrArea imputation
   data_use$MasVnrType.impute <- Hmisc::impute(data_use$MasVnrType, "random")
@@ -71,11 +72,14 @@ imputevalues<-function(data_use){
   data_use$MasVnrArea <- NULL
   data_use$MasVnrType <- data_use$MasVnrType.impute
   data_use$MasVnrArea <- data_use$MasVnrArea.impute
+  data_use$MasVnrType.impute <- NULL
+  data_use$MasVnrArea.impute <- NULL
     
   #Eletrical imputation - mode 
   data_use$Electrical.impute <- Hmisc::impute(data_use$Electrical, mode)
   data_use$Electrical <- NULL
   data_use$Electrical <- data_use$Electrical.impute
+  data_use$Electrical.impute <- NULL
 
   return(data_use)
   
@@ -101,6 +105,11 @@ newfeatures<-function(data_use){
   #CentralAir_flag as a binary variable
   data_use$CentralAir_flag <- ifelse(data_use$CentralAir=="Y",1,0)
   data_use$CentralAir <- NULL
+  
+  #MonthYear sold variable 
+  data_use$MoYrSold <- paste(data_use$YrSold,"-",data_use$MoSold,sep='')
+  data_use$MoSold <- NULL
+  data_use$YrSold <- NULL
   
   #log of SalePrice 
   data_use$LogSalePrice <- log(data_use$SalePrice)
