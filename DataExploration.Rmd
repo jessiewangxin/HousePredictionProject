@@ -1,0 +1,286 @@
+---
+title: "DataExploration"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Visualizations
+
+```{r libraries,include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+library(purrr)
+library(tidyr)
+library(car)
+```
+
+Checking missing values in data. 
+```{r}
+data_use = read.csv("train.csv", header = T, stringsAsFactors = F)
+missing_df <- data.frame(colname = names(data_use),colSums_missing=colSums(is.na(data_use)))
+
+#19 columns with missing values 
+plot_missing = missing_df %>% filter(colSums_missing!=0) %>% arrange(desc(colSums_missing))
+ggplot(plot_missing, aes(x = reorder(colname,colSums_missing), y = colSums_missing)) + 
+  geom_col(aes(fill = colname), width = 0.7) + 
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none") +        
+  xlab("") +
+  ylab("Number of Missing Observations") 
+```
+
+Cleans NA values to valid missing feature values. For example PoolQC NA is changed to "No Pool"
+```{r}
+changeNA <- function(data_use){
+  #PoolQC NA means No Pool
+  data_use$PoolQC<-ifelse(is.na(data_use$PoolQC),'NoPool',data_use$PoolQC)
+  
+  #MiscFeature - NA means None
+  data_use$MiscFeature<-ifelse(is.na(data_use$MiscFeature),'None',data_use$MiscFeature)
+  
+  #Alley - NA means No Alley Access 
+  data_use$Alley<-ifelse(is.na(data_use$Alley),'NoAlley',data_use$Alley)
+  
+  #Fence - NA means No Fence
+  data_use$Fence<-ifelse(is.na(data_use$Fence),'NoFence',data_use$Fence)
+  
+  #FireplaceQu - NA means No Fireplace
+  data_use$FireplaceQu <- ifelse(is.na(data_use$FireplaceQu),'NoFireplace',data_use$FireplaceQu)
+  
+  #NA means No Garage ####NOT SURE IF THIS IS THE BEST!!!! 
+  data_use$GarageYrBlt <- ifelse(is.na(data_use$GarageYrBlt),0,data_use$GarageYrBlt)
+  
+  #NA means No Garage 
+  data_use$GarageType <- ifelse(is.na(data_use$GarageType),'NoGarage',data_use$GarageType)
+  
+  data_use$GarageQual <- ifelse(is.na(data_use$GarageQual),'NoGarage',data_use$GarageQual)
+  
+  data_use$GarageFinish <- ifelse(is.na(data_use$GarageFinish),'NoGarage',data_use$GarageFinish)
+
+  data_use$GarageCond <- ifelse(is.na(data_use$GarageCond),'NoGarage',data_use$GarageCond)
+  
+  #NA means No Basement 
+  data_use$BsmtFinType2 <- ifelse(is.na(data_use$BsmtFinType2),'NoBasement',data_use$BsmtFinType2)
+  
+  data_use$BsmtExposure <- ifelse(is.na(data_use$BsmtExposure),'NoBasement',data_use$BsmtExposure)
+  
+  data_use$BsmtQual <- ifelse(is.na(data_use$BsmtQual),'NoBasement',data_use$BsmtQual)
+  
+  data_use$BsmtExposure <- ifelse(is.na(data_use$BsmtExposure),'NoBasement',data_use$BsmtExposure)
+  
+  data_use$BsmtFinType1 <- ifelse(is.na(data_use$BsmtFinType1),'NoBasement',data_use$BsmtFinType1)
+  
+  data_use$BsmtCond <- ifelse(is.na(data_use$BsmtCond),'NoBasement',data_use$BsmtCond)
+  
+  return(data_use)
+}
+
+data_use = changeNA(data_use)
+
+```
+
+Recheck missing values.  
+```{r}
+missing_df <- data.frame(colname = names(data_use),colSums_missing=colSums(is.na(data_use)))
+
+#4 columns missing
+plot_missing = missing_df %>% filter(colSums_missing!=0) %>% arrange(desc(colSums_missing))
+ggplot(plot_missing, aes(x = reorder(colname,colSums_missing), y = colSums_missing)) + 
+  geom_col(aes(fill = colname), width = 0.7) + 
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none") +        
+  xlab("") +
+  ylab("Number of Missing Observations") 
+```
+
+```{r}
+#IMPUTING LOT FRONTAGE DATA EXPLORATION
+lotdata = data_use %>% select(LotFrontage,LotArea,LotShape,LotConfig)
+test = lotdata %>% filter(!is.na(LotFrontage))
+
+ggplot(test, aes(x=LotArea, y=LotFrontage,group=LotShape)) +
+  geom_point(aes(color=LotShape)) +
+  xlab('Lot Area') + 
+  ylab('Lot Frontage') +
+  theme_bw()
+
+model = lm(LotFrontage ~ LotArea, data = test)
+summary(model)
+
+# 44.067376 + 0.002688 * LotArea 
+ggplot(test, aes(x = LotShape, y = LotFrontage, fill = LotShape)) + geom_boxplot() +
+  facet_wrap(~ LotConfig, ncol = 5)
+```
+
+I impute the values and do some data cleaning. 
+```{r}
+  #imputes missing values
+imputevalues<-function(data_use){
+  
+  #LotFrontage imputation - TEMPORARY
+  data_use$LotFrontage.impute <- ifelse(is.na(data_use$LotFrontage),
+                                 round(44.067376+0.002688*data_use$LotArea,0),data_use$LotFrontage) 
+  data_use$LotFrontage <- NULL
+  data_use$LotFrontage <- data_use$LotFrontage.impute
+  data_use$LotFrontage.impute <- NULL
+  
+  #MasVnrType and MasVnrArea imputation
+  data_use$MasVnrType.impute <- Hmisc::impute(data_use$MasVnrType, "random")
+  data_use$MasVnrArea.impute <- Hmisc::impute(data_use$MasVnrArea, median)
+  data_use$MasVnrType <- NULL
+  data_use$MasVnrArea <- NULL
+  data_use$MasVnrType <- data_use$MasVnrType.impute
+  data_use$MasVnrArea <- data_use$MasVnrArea.impute
+  data_use$MasVnrType.impute <- NULL
+  data_use$MasVnrArea.impute <- NULL
+    
+  #Eletrical imputation - mode 
+  data_use$Electrical.impute <- Hmisc::impute(data_use$Electrical, mode)
+  data_use$Electrical <- NULL
+  data_use$Electrical <- data_use$Electrical.impute
+  data_use$Electrical.impute <- NULL
+
+  return(data_use)
+  
+}
+  #cleans data 
+cleandata<-function(data_use){
+  #fix if any Type = None values were imputed with Area
+  data_use$MasVnrArea <- ifelse(data_use$MasVnrType=='None',0,data_use$MasVnrArea )
+  
+  return(data_use)
+}
+newfeatures<-function(data_use){
+  
+  #TotalPorch information
+  data_use$TotalPorchSF <- data_use$WoodDeckSF +data_use$OpenPorchSF + data_use$EnclosedPorch + data_use$X3SsnPorch +   data_use$ScreenPorch
+  data_use$WoodDeckSF <- NULL 
+  data_use$OpenPorchSF <- NULL 
+  data_use$EnclosedPorch <- NULL 
+  data_use$X3SsnPorch <- NULL 
+  data_use$ScreenPorch <- NULL
+  
+  #CentralAir_flag as a binary variable
+  data_use$CentralAir_flag <- ifelse(data_use$CentralAir=="Y",1,0)
+  data_use$CentralAir <- NULL
+  
+  #MonthYear sold variable 
+  data_use$MoYrSold <- paste(data_use$YrSold,"-",data_use$MoSold,sep='')
+  data_use$MoSold <- NULL
+  data_use$YrSold <- NULL
+  
+  #log of SalePrice 
+  data_use$LogSalePrice <- log(data_use$SalePrice)
+  
+  return(data_use)
+  
+}
+
+data_use = imputevalues(data_use)
+data_use = cleandata(data_use)
+data_use = newfeatures(data_use)
+```
+
+Exploring multi-collinearity. 
+```{r}
+numeric_data = data_use %>% select(
+  LotFrontage, MasVnrArea,
+  LotArea, BsmtFinSF2, BsmtUnfSF, TotalBsmtSF, X1stFlrSF, X2ndFlrSF, LowQualFinSF, GrLivArea,
+  BsmtFullBath, BsmtHalfBath, FullBath, HalfBath, BedroomAbvGr, KitchenAbvGr, TotRmsAbvGrd, Fireplaces,
+  GarageCars, GarageArea, TotalPorchSF, PoolArea, MiscVal, SalePrice)
+
+cc = cor(numeric_data, method = "spearman")
+corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average",addrect = 1, tl.cex = 0.5)
+```
+
+Scatter plot matrix
+```{r}
+set_1 = data_use %>% select(X2ndFlrSF, HalfBath, BedroomAbvGr, FullBath, GrLivArea, TotRmsAbvGrd, SalePrice)
+set_2 = data_use %>% select(GarageCars, GarageArea)
+
+#ScatterPlotMatrix
+scatterplotMatrix(set_1)
+scatterplotMatrix(set_2)
+```
+
+```{r}
+#Relationship between year built or remodeled and SalePrice
+ggplot(data_use, aes(x=YearBuilt, y=SalePrice)) + 
+  geom_line() +
+  xlab("Time") + 
+  ylab("SalePrice") +
+  theme_bw() +
+  geom_smooth()
+
+ggplot(data_use, aes(x=YearRemodAdd, y=SalePrice)) + 
+  geom_line() +
+  xlab("Time") + 
+  ylab("SalePrice") +
+  theme_bw() +
+  geom_smooth()
+```
+
+```{r}
+#Sale price by time sold 
+data_use %>%
+  select(MoYrSold) %>% 
+  gather() %>% 
+  ggplot(aes(value, fill='pink')) +
+  geom_histogram(stat='count') + 
+  xlab('') + 
+  ylab('') +
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+
+#Price by Neighborhood
+data_use %>%
+  select(Neighborhood, SalePrice) %>% 
+  group_by(Neighborhood) %>% 
+  summarise(avg_price=mean(SalePrice)) %>% 
+  ggplot(aes(x = reorder(Neighborhood,avg_price), y = avg_price)) + 
+  geom_col(aes(fill = avg_price), width = 0.7) + 
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none") +        
+  xlab("") +
+  ylab("Mean Price by Neighborhoods") 
+
+#Price by HouseStyle
+data_use %>%
+  select(HouseStyle, SalePrice) %>% 
+  group_by(HouseStyle) %>% 
+  summarise(avg_price=mean(SalePrice)) %>% 
+  ggplot(aes(x = reorder(HouseStyle,avg_price), y = avg_price)) + 
+  geom_col(aes(fill = avg_price), width = 0.7) + 
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none") +        
+  xlab("") +
+  ylab("Mean Price by House Style") 
+
+```
+
+```{r}
+#Checking distribution of SalePrice 
+g <- ggplot(data_use, aes(x=SalePrice)) + 
+  geom_histogram(bins=200, fill="#66ffcc") + 
+  xlab('Sale Price') + 
+  ylab('') +
+  theme_classic() 
+
+g
+
+#checking distribution of log transformation of SalePrice
+glog <- ggplot(data_use, aes(x=log(SalePrice))) + 
+  geom_histogram(bins=200, fill="#66ffcc") + 
+  xlab('Log of Sale Price') + 
+  ylab('') +
+  theme_classic() 
+
+glog
+```
