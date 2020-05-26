@@ -3,19 +3,16 @@ library(tree)
 library(randomForest)
 
 # #MULTIVARIABLE MODEL  
-# num_columns = c('LotFrontage', 'MasVnrArea', 'LotArea', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 
-#                 'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'BsmtFullBath', 'BsmtHalfBath', 
-#                 'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces',
-#                 'GarageCars', 'GarageArea', 'TotalPorchSF', 'PoolArea', 'MiscVal','SalePrice')
-# 
-# full_linear_model = lm(SalePrice  ~ ., data_use[num_columns])
-# vif(full_linear_model)
-# library(car)
-# influencePlot(full_linear_model)
-# 
-# vif(full_linear_model)
-# 
-# avPlots(full_linear_model)
+num_columns = c('LotFrontage', 'MasVnrArea', 'LotArea', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 
+                 'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'BsmtFullBath', 'BsmtHalfBath', 
+                 'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces',
+                 'GarageCars', 'GarageArea', 'TotalPorchSF', 'PoolArea', 'MiscVal','SalePrice')
+ 
+full_linear_model = lm(SalePrice  ~ ., data_use[num_columns])
+vif(full_linear_model)
+influencePlot(full_linear_model)
+avPlots(full_linear_model)
+summary(full_linear_model)
 
 
 #RIDGE 

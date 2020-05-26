@@ -72,7 +72,7 @@ numeric_data = data_use %>% select(
 cc = cor(numeric_data, method = "spearman")
 corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average",addrect = 1, tl.cex = 0.5)
 
-set_1 = data_use %>% select(X2ndFlrSF, HalfBath, BedroomAbvGr, FullBath, GrLivArea, TotRmsAbvGrd)
+set_1 = data_use %>% select(X2ndFlrSF, HalfBath, BedroomAbvGr, FullBath, GrLivArea, TotRmsAbvGrd, SalePrice)
 set_2 = data_use %>% select(GarageCars, GarageArea)
 
 #ScatterPlotMatrix
@@ -138,6 +138,7 @@ data_use %>%
   ylab('') +
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
 
+#Price by Neighborhood
 data_use %>%
   select(Neighborhood, SalePrice) %>% 
   group_by(Neighborhood) %>% 
@@ -149,6 +150,19 @@ data_use %>%
   theme(legend.position = "none") +        
   xlab("") +
   ylab("Mean Price by Neighborhoods") 
+
+#Price by HouseStyle
+data_use %>%
+  select(HouseStyle, SalePrice) %>% 
+  group_by(HouseStyle) %>% 
+  summarise(avg_price=mean(SalePrice)) %>% 
+  ggplot(aes(x = reorder(HouseStyle,avg_price), y = avg_price)) + 
+  geom_col(aes(fill = avg_price), width = 0.7) + 
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none") +        
+  xlab("") +
+  ylab("Mean Price by House Style") 
 
 
 #Checking distribution of SalePrice 
@@ -168,6 +182,8 @@ glog <- ggplot(data_use, aes(x=log(SalePrice))) +
   theme_classic() 
 
 glog
+
+
 
 
 #####################################################################################
