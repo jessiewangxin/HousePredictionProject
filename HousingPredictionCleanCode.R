@@ -3,6 +3,7 @@ library(kknn)
 library(caret)
 
 data_use = read.csv("train.csv", header = T, stringsAsFactors = F)
+data_test = read.csv("test.csv", header = T, stringsAsFactors = F)
 
 #splitting into training and testing data sets 
 train.index <- createDataPartition(data_use$SalePrice, p=0.8, list=FALSE)
@@ -111,16 +112,28 @@ newfeatures<-function(data_use){
   data_use$MoSold <- NULL
   data_use$YrSold <- NULL
   
+
+  return(data_use)
+  
+}
+  #adding logsaleprice 
+logsaleprice <- function(data_use){
+  
   #log of SalePrice 
   data_use$LogSalePrice <- log(data_use$SalePrice)
   
   return(data_use)
-  
 }
 
 data_use = changeNA(data_use)
 data_use = imputevalues(data_use)
 data_use = cleandata(data_use)
 data_use = newfeatures(data_use)
+data_use = logsaleprice(data_use)
+
+data_test = changeNA(data_test)
+data_test = imputevalues(data_test)
+data_test = cleandata(data_test)
+data_test = newfeatures(data_test)
 
 
