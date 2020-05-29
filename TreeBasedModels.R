@@ -17,7 +17,7 @@ train.index <- createDataPartition(data_rf$LogSalePrice, p=0.8, list=FALSE)
 data.train <- data_rf[train.index,]
 data.test <- data_rf[-train.index,]
 
-######### FIRST TREE 
+############################################### SIMPLE TREE ###################################################3
 initial.tree = tree(LogSalePrice ~ ., data = data.train ,split='gini')
 
 # training accuracy
@@ -40,7 +40,7 @@ write.csv(treesubmission,'firsttree.csv')
 
 
 
-##############RANDOM FOREST
+################################################ RANDOM FOREST ##################################################
 
 rf.default = randomForest(LogSalePrice ~., data = data.train, importance = TRUE)
 
@@ -66,7 +66,7 @@ rf_default_predictions = predict(rf.default, data_test%>% mutate_if(is.character
 
 
 
-###############XG BOOST
+################################################## BOOST ############################################################
 library(gbm)
 
 #Fitting 10,000 trees with a depth of 4.
@@ -74,11 +74,11 @@ set.seed(0)
 boost_tree = gbm(LogSalePrice ~ ., data = data.train,
                    distribution = "gaussian",
                    n.trees = 10000,
-                   interaction.depth = 4)
+                   interaction.depth = 5)
 
 #Inspecting the relative influence.
 par(mfrow = c(1, 1))
-summary(boost.boston)
+summary(boost_tree)
 
 #Let’s make a prediction on the test set. With boosting, the number of trees is
 #a tuning parameter; having too many can cause overfitting. In general, we should
@@ -86,35 +86,55 @@ summary(boost.boston)
 #test error as a function of the number of trees and make a plot for illustrative
 #purposes.
 n.trees = seq(from = 100, to = 10000, by = 100)
-predmat = predict(boost.boston, newdata = Boston[-train, ], n.trees = n.trees)
+prediction_matrix = predict(boost_tree, newdata = data.test, n.trees = n.trees)
 
 #Produces 100 different predictions for each of the 152 observations in our
 #test set.
-dim(predmat)
+dim(prediction_matrix)
 
 #Calculating the boosted errors.
 par(mfrow = c(1, 1))
-berr = with(Boston[-train, ], apply((predmat - medv)^2, 2, mean))
-plot(n.trees, berr, pch = 16,
+boost_error = with(data.test, apply((prediction_matrix - LogSalePrice)^2, 2, mean))
+plot(n.trees, boost_error, pch = 16,
      ylab = "Mean Squared Error",
      xlab = "# Trees",
      main = "Boosting Test Error")
 
 #Include the best OOB error from the random forest.
-abline(h = min(oob.err), col = "red")
+abline(h = min(boost_error), col = "red")
 
 #Increasing the shrinkage parameter; a higher proportion of the errors are
 #carried over.
 set.seed(0)
-boost.boston2 = gbm(medv ~ ., data = Boston[train, ],
+boost2 = gbm(LogSalePrice ~ ., data = data.train,
                     distribution = "gaussian",
-                    n.trees = 10000,
-                    interaction.depth = 4,
+                    n.trees = 5000,
+                    interaction.depth = 3,
                     shrinkage = 0.1)
-predmat2 = predict(boost.boston2, newdata = Boston[-train, ], n.trees = n.trees)
+n.trees = seq(from = 100, to = 5000, by = 100)
+prediction_matrix2 = predict(boost2, newdata = data.test, n.trees = n.trees)
 
-berr2 = with(Boston[-train, ], apply((predmat2 - medv)^2, 2, mean))
-plot(n.trees, berr2, pch = 16,
+boost_error2 = with(data.test, apply((prediction_matrix2 - LogSalePrice)^2, 2, mean))
+plot(n.trees, boost_error2, pch = 16,
      ylab = "Mean Squared Error",
      xlab = "# Trees",
      main = "Boosting Test Error")
+mean(boost_error2)
+
+plot(n.trees, boost_error2, pch = 16,
+     ylab = "Mean Squared Error",
+     xlab = "# Trees",
+     main = "Boosting Test Error")
+
+
+#prediction vectors using real test 
+boost.predictions = predict(boost2, data_test%>% mutate_if(is.character, as.factor), n.trees = n.trees)
+submission = exp(data.frame(boost.predictions)) 
+submission$SalePrice = rowSums(submission)/ncol(submission)
+#class(submission)
+#class(data_test)
+boostsubmission =data.frame(c(data_test['Id'],submission %>% select(SalePrice)))
+#rownames(treesubmission) <- treesubmission$Id
+#treesubmission$Id <- NULL
+#colnames(treesubmission) = c('Id','SalePrice')
+write.csv(boostsubmission,'boostresults.csv')

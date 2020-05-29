@@ -29,8 +29,8 @@ cv.ridge.out = cv.glmnet(x[train.index, ], y[train.index], alpha = 0, nfolds = 1
 plot(cv.ridge.out, main = "Ridge Regression\n")
 
 bestlambda.ridge = cv.ridge.out$lambda.min
-bestlambda.ridge       #.03125716
-log(bestlambda.ridge)  #-3.465507
+bestlambda.ridge      
+log(bestlambda.ridge) 
 
 #refit RIDGE
 ridge.bestlambdatrain = predict(ridge.models, s = bestlambda.ridge, newx = x[-train.index, ])
@@ -44,6 +44,8 @@ predict(ridge.best_refit, s = bestlambda.ridge, type = "coefficients")
 # MSE
 ridge.bestlambda = predict(ridge.best_refit, s = bestlambda.ridge, newx = x)
 mean((ridge.bestlambda - y)^2)  # 0.03628087
+
+eval_results(ridge.bestlambda,y,data.test)
 
 ##############################################LASSO
 
@@ -78,23 +80,29 @@ mean((lasso.bestlambda - y)^2)  # 0.03733635
 
 #use data_test cleaned from HousingPredictionCleanCode.R 
 
-num_columns = c('Id','LotFrontage', 'MasVnrArea', 'LotArea', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 
+num_columns = c('LotFrontage', 'MasVnrArea', 'LotArea', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 
                 'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'BsmtFullBath', 'BsmtHalfBath', 
                 'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces',
                 'GarageCars', 'GarageArea', 'TotalPorchSF', 'PoolArea', 'MiscVal')
 
-x = model.matrix(LogSalePrice ~ ., data_test[num_columns])[, -1] #Dropping the intercept column
-index = data.frame(x)['Id']
-listindex= list(index)
+x = model.matrix(~ ., data_test[num_columns])[, -1] #Dropping the intercept column
 
-y = data_test[data.matrix(index),]$LogSalePrice
-
-lasso.official_refit = glmnet(x, y, alpha = 1)
-lasso_official = predict(lasso.best_refit, data_test)
+#LASSO
+lasso_official = predict(lasso.best_refit, s = bestlambda.lasso, newx = x)
 
 submission = exp(data.frame(lasso_official)) %>% rename(SalePrice = X1)
-class(submission)
-class(data_test)
+# class(submission)
+# class(data_test)
 lassosubmission =c(data_test['Id'],submission)
 
 write.csv(lassosubmission,'lasso.csv')
+
+#RIDGE
+ridge_official = predict(ridge.best_refit, s = bestlambda.ridge, newx = x)
+
+submission = exp(data.frame(ridge_official)) %>% rename(SalePrice = X1)
+# class(submission)
+# class(data_test)
+ridgesubmission =c(data_test['Id'],submission)
+
+write.csv(ridgesubmission,'ridge.csv')
