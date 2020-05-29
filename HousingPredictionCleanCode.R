@@ -5,13 +5,6 @@ library(caret)
 data_use = read.csv("train.csv", header = T, stringsAsFactors = F)
 data_test = read.csv("test.csv", header = T, stringsAsFactors = F)
 
-#splitting into training and testing data sets 
-train.index <- createDataPartition(data_use$SalePrice, p=0.8, list=FALSE)
-data.train <- data_use[train.index,]
-data.test <- data_use[-train.index,]
-
-data_use = data.train
-
   #imputes NA values that are not actually missing 
 changeNA <- function(data_use){
   #PoolQC NA means No Pool
@@ -125,6 +118,87 @@ logsaleprice <- function(data_use){
   return(data_use)
 }
 
+  #imputing values missing on test data 
+imputetest <- function(data){
+   
+  data$MSZoning.impute <- Hmisc::impute(data$Electrical, mode)
+  data$MSZoning <- NULL
+  data$MSZoning <- data$MSZoning.impute
+  data$MSZoning.impute <- NULL
+  
+  data$Utilities.impute <- Hmisc::impute(data$Utilities, mode)
+  data$Utilities <- NULL
+  data$Utilities <- data$Utilities.impute
+  data$Utilities.impute <- NULL
+  
+  data$Functional.impute <- Hmisc::impute(data$Functional, mode)
+  data$Functional <- NULL
+  data$Functional <- data$Functional.impute
+  data$Functional.impute <- NULL
+  
+  data$BsmtHalfBath.impute <- Hmisc::impute(data$BsmtHalfBath, median)
+  data$BsmtHalfBath <- NULL
+  data$BsmtHalfBath <- data$BsmtHalfBath.impute
+  data$BsmtHalfBath.impute <- NULL
+  
+  data$BsmtFullBath.impute <- Hmisc::impute(data$BsmtFullBath, median)
+  data$BsmtFullBath <- NULL
+  data$BsmtFullBath <- data$BsmtFullBath.impute
+  data$BsmtFullBath.impute <- NULL
+  
+  data$TotalBsmtSF.impute <- Hmisc::impute(data$TotalBsmtSF, median)
+  data$TotalBsmtSF <- NULL
+  data$TotalBsmtSF <- data$TotalBsmtSF.impute
+  data$TotalBsmtSF.impute <- NULL
+  
+  data$SaleType.impute <- Hmisc::impute(data$SaleType, mode)
+  data$SaleType <- NULL
+  data$SaleType <- data$SaleType.impute
+  data$SaleType.impute <- NULL
+  
+  data$KitchenQual.impute <- Hmisc::impute(data$KitchenQual, mode)
+  data$KitchenQual <- NULL
+  data$KitchenQual <- data$KitchenQual.impute
+  data$KitchenQual.impute <- NULL
+  
+  data$GarageCars.impute <- Hmisc::impute(data$GarageCars, median)
+  data$GarageCars <- NULL
+  data$GarageCars <- data$GarageCars.impute
+  data$GarageCars.impute <- NULL
+  
+  data$GarageArea.impute <- Hmisc::impute(data$GarageArea, median)
+  data$GarageArea <- NULL
+  data$GarageArea <- data$GarageArea.impute
+  data$GarageArea.impute <- NULL
+  
+  data$Exterior2nd.impute <- Hmisc::impute(data$Exterior2nd, mode)
+  data$Exterior2nd <- NULL
+  data$Exterior2nd <- data$Exterior2nd.impute
+  data$Exterior2nd.impute <- NULL
+  
+  data$Exterior1st.impute <- Hmisc::impute(data$Exterior1st, mode)
+  data$Exterior1st <- NULL
+  data$Exterior1st <- data$Exterior1st.impute
+  data$Exterior1st.impute <- NULL
+  
+  data$BsmtUnfSF.impute <- Hmisc::impute(data$BsmtUnfSF, median)
+  data$BsmtUnfSF <- NULL
+  data$BsmtUnfSF <- data$BsmtUnfSF.impute
+  data$BsmtUnfSF.impute <- NULL
+  
+  data$BsmtFinSF2.impute <- Hmisc::impute(data$BsmtFinSF2, median)
+  data$BsmtFinSF2 <- NULL
+  data$BsmtFinSF2 <- data$BsmtFinSF2.impute
+  data$BsmtFinSF2.impute <- NULL
+  
+  data$BsmtFinSF1.impute <- Hmisc::impute(data$BsmtFinSF1, median)
+  data$BsmtFinSF1 <- NULL
+  data$BsmtFinSF1 <- data$BsmtFinSF1.impute
+  data$BsmtFinSF1.impute <- NULL
+  
+  return(data)
+}
+
 data_use = changeNA(data_use)
 data_use = imputevalues(data_use)
 data_use = cleandata(data_use)
@@ -135,5 +209,6 @@ data_test = changeNA(data_test)
 data_test = imputevalues(data_test)
 data_test = cleandata(data_test)
 data_test = newfeatures(data_test)
+data_test = imputetest(data_test)
 
 
