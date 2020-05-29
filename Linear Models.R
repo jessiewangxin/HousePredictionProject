@@ -45,7 +45,6 @@ predict(ridge.best_refit, s = bestlambda.ridge, type = "coefficients")
 ridge.bestlambda = predict(ridge.best_refit, s = bestlambda.ridge, newx = x)
 mean((ridge.bestlambda - y)^2)  # 0.03628087
 
-eval_results(ridge.bestlambda,y,data.test)
 
 ##############################################LASSO
 
@@ -103,6 +102,6 @@ ridge_official = predict(ridge.best_refit, s = bestlambda.ridge, newx = x)
 submission = exp(data.frame(ridge_official)) %>% rename(SalePrice = X1)
 # class(submission)
 # class(data_test)
-ridgesubmission =c(data_test['Id'],submission)
+ridgesubmission = data.frame(c(data_test['Id'],submission['SalePrice']))
 
 write.csv(ridgesubmission,'ridge.csv')

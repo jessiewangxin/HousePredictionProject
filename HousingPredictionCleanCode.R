@@ -117,7 +117,6 @@ logsaleprice <- function(data_use){
   
   return(data_use)
 }
-
   #imputing values missing on test data 
 imputetest <- function(data){
    
