@@ -25,11 +25,11 @@ grid = 10^seq(5, -2, length = 100)
 ridge.models = glmnet(x[train.index, ], y[train.index], alpha = 0, lambda = grid)
 plot(ridge.models, xvar = "lambda", label = TRUE, main = "Ridge Regression")
 
-cv.ridge.out = cv.glmnet(x[train.index, ], y[train.index], alpha = 0, nfolds = 10, lambda = grid)
+cv.ridge.out = cv.glmnet(x[train.index, ], y[train.index], alpha = 0, nfolds = 5, lambda = grid)
 plot(cv.ridge.out, main = "Ridge Regression\n")
 
 bestlambda.ridge = cv.ridge.out$lambda.min
-bestlambda.ridge      
+bestlambda.ridge      #.1353048
 log(bestlambda.ridge) 
 
 #refit RIDGE
@@ -52,7 +52,7 @@ lasso.models = glmnet(x[train.index, ], y[train.index], alpha = 1, lambda = grid
 plot(lasso.models, xvar = "lambda", label = TRUE, main = "Lasso Regression")
 
 set.seed(0)
-cv.lasso.out = cv.glmnet(x[train.index, ], y[train.index], alpha = 1, nfolds = 10, lambda = grid)
+cv.lasso.out = cv.glmnet(x[train.index, ], y[train.index], alpha = 1, nfolds = 5, lambda = grid)
 
 plot(cv.lasso.out, main = "Lasso Regression\n")
 
@@ -63,7 +63,6 @@ log(bestlambda.lasso)  # -4.60517
 #MSE
 lasso.bestlambdatrain = predict(lasso.models, s = bestlambda.lasso, newx = x[-train.index, ])
 mean((lasso.bestlambdatrain - y.test)^2) #.05188425
-
 
 #Refit a model & Results
 lasso.best_refit = glmnet(x, y, alpha = 1)
@@ -85,6 +84,18 @@ num_columns = c('LotFrontage', 'MasVnrArea', 'LotArea', 'BsmtFinSF2', 'BsmtUnfSF
                 'GarageCars', 'GarageArea', 'TotalPorchSF', 'PoolArea', 'MiscVal')
 
 x = model.matrix(~ ., data_test[num_columns])[, -1] #Dropping the intercept column
+
+
+
+
+#####################################ELASTIC NET
+
+
+
+
+
+
+####################################################OUTPUT FILES 
 
 #LASSO
 lasso_official = predict(lasso.best_refit, s = bestlambda.lasso, newx = x)
