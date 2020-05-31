@@ -22,42 +22,49 @@ train.index <- createDataPartition(data_rf$LogSalePrice, p=0.8, list=FALSE)
 data.train <- data_rf[train.index,]
 data.test <- data_rf[-train.index,]
 
-#number of variables 
+################################### CHOOSING NUMBER OF VARIABLES 
 
+numvar_error=c()
 set.seed(0)
 oob.err = numeric(13)
 for (mtry in 1:13) {
   fit = randomForest(LogSalePrice ~ ., data = data.train, mtry = mtry)
-  oob.err[mtry] = fit$mse[500]
-  cat("We're performing iteration", mtry, "\n")
-  
-  list_error[[i]] = boost_error
+  rf_predictions = predict(fit, data.test)
+  numvar_error[[mtry]] = mean((rf_predictions - data.test$LogSalePrice)^2) #.0212
 }
+numvar_error
+min(numvar_error)
 
-#Visualizing the OOB error.
-plot(1:13, oob.err, pch = 16, type = "b",
+#Visualizing errors - looks like ideal number of trees is 6 
+plot(1:13, numvar_error, pch = 16, type = "b",
      xlab = "Variables Considered at Each Split",
-     ylab = "OOB Mean Squared Error",
+     ylab = "OOB MSE",
      main = "Random Forest OOB Error Rates\nby # of Variables")
 
-
+###########################################CHOOSING NUMBER OF TREES
 n.trees = seq(from = 1000, to = 10000, by = 1000)
+numtree_error = c()
 
-list_error = c()
-for(i in depth){
+for(i in 1:10){
   
-  rf.test = randomForest(LogSalePrice ~., data = data.train, importance = TRUE, ntree = i)
-  rf_prediction = predict(rf.test, data.train)
-  mean((rf_predictions - data.test$LogSalePrice)^2) #.0212
-  
-  boost_error = mean((prediction_value$prediction_value - data.test$LogSalePrice)^2)
-  
-  list_error[[i]] = boost_error
-  
-}
+  rf.test = randomForest(LogSalePrice ~., data = data.train, importance = TRUE, ntree = n.trees[i],mtry = 6)
+  rf_predictions = predict(rf.test, data.test)
+  print(mean((rf_predictions - data.test$LogSalePrice)^2))
+  numtree_error[[i]] = mean((rf_predictions - data.test$LogSalePrice)^2) #.0212
+
+  }
+
+plot(seq(from = 1000, to = 10000, by = 1000), numtree_error, pch = 16, type = "b",
+     xlab = "Number of Trees",
+     ylab = "OOB MSE",
+     main = "Random Forest OOB Error Rates\nby # of Trees")
 
 
-rf.default = randomForest(LogSalePrice ~., data = data.train, importance = TRUE, ntree = 5000)
+numtree_error
+min(numtree_error)
+
+#############################################FINAL MODEL 
+rf.default = randomForest(LogSalePrice ~., data = data.train, importance = TRUE, ntree = 10000, mtry=6)
 
 # training and testing accuracies
 rf.default
@@ -98,6 +105,6 @@ submission = exp(data.frame(rf_default_predictions))
 submission$SalePrice = submission$rf_default_predictions
 submission$rf_default_predictions <- NULL
 
-treesubmission = data.frame(c(data_test['Id'],submission %>% select(SalePrice)))
+treesubmission = data.frame(c(data_test['Id'],submission))
 
 write.csv(treesubmission,'treeresults.csv')
