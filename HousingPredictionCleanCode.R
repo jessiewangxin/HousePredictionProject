@@ -83,8 +83,14 @@ cleandata<-function(data_use){
   #fix if any Type = None values were imputed with Area
   data_use$MasVnrArea <- ifelse(data_use$MasVnrType=='None',0,data_use$MasVnrArea )
   
+  data_use$HouseStyle <- ifelse(data_use$HouseStyle=='2.5Unf','2.5Story', data_use$HouseStyle)
+  data_use$HouseStyle <- ifelse(data_use$HouseStyle=='2.5Fin','2.5Story', data_use$HouseStyle)
+  
+  data_use$Electrical <- ifelse(data_use$Electrical == 'FuseP','Other', data_use$Electrical)
+  data_use$Electrical <- ifelse(data_use$Electrical == 'Mix','Other', data_use$Electrical)  
   return(data_use)
 }
+
   #creates new features
 newfeatures<-function(data_use){
   
@@ -100,12 +106,130 @@ newfeatures<-function(data_use){
   data_use$CentralAir_flag <- ifelse(data_use$CentralAir=="Y",1,0)
   data_use$CentralAir <- NULL
   
-  #MonthYear sold variable 
-  data_use$MoYrSold <- paste(data_use$YrSold,"-",data_use$MoSold,sep='')
-  data_use$MoSold <- NULL
-  data_use$YrSold <- NULL
+  #Fence_flag as a binary variable
+  data_use$Fence_flag <- ifelse(data_use$Fence=="NoFence",0,1)
+  data_use$Fence <- NULL
   
-
+  #Pool_flag as a binary variable
+  data_use$Pool_flag <- ifelse(data_use$PoolQC=="NoPool",0,1)
+  data_use$PoolQC <- NULL
+  
+  #Paved_flag as a binary variable
+  data_use$Paved_flag <- ifelse(data_use$PavedDrive=="N",0,1)
+  data_use$PavedDrive <- NULL
+  
+  #Cond2Norm_flag as a binary variable
+  data_use$Cond2Norm_flag <- ifelse(data_use$Condition2!="Norm",0,1)
+  data_use$Condition2 <- NULL
+  
+  #MiscFeatures flag
+  data_use$MiscFeatures <- ifelse(data_use$MiscFeature=="None",'N','Y')
+  data_use$MiscFeature <- NULL
+  
+  #StandardRoof
+  data_use$StandardRoof <- ifelse(data_use$RoofMatl!="CompShg",'N','Y')
+  data_use$RoofMatl <- NULL
+  
+  #GarageCond_num as numeric variable
+  data_use$GarageCond_flag <- ifelse(data_use$GarageCond!="NoGarage",
+                                     ifelse(data_use$GarageCond!="Po",
+                                            ifelse(data_use$GarageCond!="Fa",
+                                                   ifelse(data_use$GarageCond!='TA',
+                                                          ifelse(data_use$GarageCond!='Gd',5,4),3),2),1),0)
+  data_use$GarageCond <- NULL
+  
+  #GarageQual_num as numeric variable
+  data_use$GarageQual_flag <- ifelse(data_use$GarageQual!="NoGarage",
+                                     ifelse(data_use$GarageQual!="Po",
+                                            ifelse(data_use$GarageQual!="Fa",
+                                                   ifelse(data_use$GarageQual!='TA',
+                                                          ifelse(data_use$GarageQual!='Gd',5,4),3),2),1),0)
+  data_use$GarageQual <- NULL
+  
+  #GarageQual_num as numeric variable
+  data_use$FireplaceQu_flag <- ifelse(data_use$FireplaceQu!="NoFireplace",
+                                     ifelse(data_use$FireplaceQu!="Po",
+                                            ifelse(data_use$FireplaceQu!="Fa",
+                                                   ifelse(data_use$FireplaceQu!='TA',
+                                                          ifelse(data_use$FireplaceQu!='Gd',5,4),3),2),1),0)
+  data_use$FireplaceQu <- NULL
+  
+  #KitchenQual_flag as numeric variable
+  data_use$KitchenQual_flag <- ifelse(data_use$KitchenQual!="Po",
+                                              ifelse(data_use$KitchenQual!="Fa",
+                                                     ifelse(data_use$KitchenQual!='TA',
+                                                            ifelse(data_use$KitchenQual!='Gd', 5,4),3),2),1)
+  data_use$KitchenQual <- NULL
+  
+  #HeatingQC_flag as numeric variable
+  data_use$HeatingQC_flag <- ifelse(data_use$HeatingQC!="Po",
+                                      ifelse(data_use$HeatingQC!="Fa",
+                                             ifelse(data_use$HeatingQC!='TA',
+                                                    ifelse(data_use$HeatingQC!='Gd', 5,4),3),2),1)
+  data_use$HeatingQC <- NULL
+  
+  #HeatingGASA - binary flag, Gas forced warm air furnace 
+  data_use$HeatingGASA_flag <- ifelse(data_use$Heating!="GasA",1,0)
+  data_use$Heating <- NULL
+  
+  #BsmtExposure_flag as numeric variable
+  data_use$BsmtExposure_flag <- ifelse(data_use$BsmtExposure!="NoBasement",
+                                    ifelse(data_use$BsmtExposure!="No",
+                                           ifelse(data_use$BsmtExposure!='Mn',
+                                                  ifelse(data_use$BsmtExposure!='Av', 4,3),2),1),0)
+  data_use$BsmtExposure <- NULL
+  
+  #BsmtCond_num as numeric variable
+  data_use$BsmtCond_flag <- ifelse(data_use$BsmtCond!="NoBasement",
+                                      ifelse(data_use$BsmtCond!="Po",
+                                             ifelse(data_use$BsmtCond!="Fa",
+                                                    ifelse(data_use$BsmtCond!='TA',
+                                                           ifelse(data_use$BsmtCond!='Gd',5,4),3),2),1),0)
+  data_use$BsmtCond <- NULL
+  
+  #BsmtQual_num as numeric variable (evaluates height of basement)
+  data_use$BsmtQual_flag <- ifelse(data_use$BsmtQual!="NoBasement",
+                                   ifelse(data_use$BsmtQual!="Po",
+                                          ifelse(data_use$BsmtQual!="Fa",
+                                                 ifelse(data_use$BsmtQual!='TA',
+                                                        ifelse(data_use$BsmtQual!='Gd',5,4),3),2),1),0)
+  data_use$BsmtQual <- NULL
+  
+  #ExterCond_flag as numeric variable
+  data_use$ExterCond_flag <- ifelse(data_use$ExterCond!="Po",
+                                    ifelse(data_use$ExterCond!="Fa",
+                                           ifelse(data_use$ExterCond!='TA',
+                                                  ifelse(data_use$ExterCond!='Gd', 5,4),3),2),1)
+  data_use$ExterCond <- NULL
+  
+  #ExterQual_flag as numeric variable
+  data_use$ExterQual_flag <- ifelse(data_use$ExterQual!="Po",
+                                    ifelse(data_use$ExterQual!="Fa",
+                                           ifelse(data_use$ExterQual!='TA',
+                                                  ifelse(data_use$ExterQual!='Gd', 5,4),3),2),1)
+  data_use$ExterQual <- NULL
+  
+  
+  #MonthYear sold variable 
+  #data_use$MoYrSold <- paste(data_use$YrSold,"-",data_use$MoSold,sep='')
+  #data_use$MoSold <- NULL
+  #data_use$YrSold <- NULL
+  
+  #Total number of baths
+  data_use$TotalBath <- data_use$FullBath + .5* data_use$HalfBath + data_use$BsmtFullBath + .5*data_use$BsmtHalfBath
+  data_use$FullBath <- NULL
+  data_use$HalfBath <- NULL
+  data_use$BsmtFullBath <- NULL
+  data_use$BsmtHalfBath <- NULL 
+  
+  data_use$MSSubClass <- NULL
+  data_use$TotalSF <- data_use$X1stFlrSF + data_use$X2ndFlrSF
+  data_use$NumFloors <- ifelse(data_use$X2ndFlrSF==0,1,2)
+  data_use$X1stFlrSF <- NULL
+  data_use$X2nsFlrSF <- NULL
+  
+  data_use
+  
   return(data_use)
   
 }
@@ -120,10 +244,11 @@ logsaleprice <- function(data_use){
   #imputing values missing on test data 
 imputetest <- function(data){
    
-  data$MSZoning.impute <- Hmisc::impute(data$Electrical, mode)
+  data$MSZoning.impute <- Hmisc::impute(data$MSZoning, mode)
   data$MSZoning <- NULL
   data$MSZoning <- data$MSZoning.impute
   data$MSZoning.impute <- NULL
+  data$MSZoning <- ifelse(data$MSZoning=="character",'RL',data$MSZoning)
   
   data$Utilities.impute <- Hmisc::impute(data$Utilities, mode)
   data$Utilities <- NULL
@@ -198,16 +323,45 @@ imputetest <- function(data){
   return(data)
 }
 
+#fix issues on imputation
+fixdata <- function(data){
+  data$Functional <- ifelse(data$Functional=="character",'Typ',data$Functional)
+  data$SaleType <- ifelse(data$SaleType=="character",'WD',data$SaleType)
+  data$Electrical <- ifelse(data$Electrical=="character",'SBrkr',data$Electrical)
+  
+  data$Exterior1st <- ifelse(data$Exterior1st=="character",'VinylSd',data$Exterior1st)
+  
+  data$Exterior2nd <- ifelse(data$Exterior2nd=="character",'VinylSd',data$Exterior2nd)
+  data$Exterior2nd <- ifelse(data$Exterior2nd=="Other",'VinylSd',data$Exterior2nd)
+  
+  data$Utilities <- ifelse(data$Utilities=="character",'AllPub',data$Utilities)
+  #data$KitchenQual <- ifelse(is.na(data$KithenQual), 'TA', data$KitchenQual)
+  return(data)
+}
+
+removeobs <- function(data){
+  #BEST TO REMOVE THESE 
+  data$Exterior1st = ifelse(data$Exterior1st=="ImStucc",'VinylSd',data$Exterior1st)
+  data$Exterior1st = ifelse(data$Exterior1st=="Stone",'VinylSd',data$Exterior1st)  
+  
+  return(data)
+}
+
 data_use = changeNA(data_use)
 data_use = imputevalues(data_use)
+data_use = fixdata(data_use)
 data_use = cleandata(data_use)
 data_use = newfeatures(data_use)
 data_use = logsaleprice(data_use)
+data_use = removeobs(data_use)
 
+#data_test = fixtest(data_test)
 data_test = changeNA(data_test)
+data_test = imputetest(data_test)
+data_test = fixdata(data_test)
 data_test = imputevalues(data_test)
 data_test = cleandata(data_test)
 data_test = newfeatures(data_test)
-data_test = imputetest(data_test)
+#data_test = imputetest(data_test)
 
 

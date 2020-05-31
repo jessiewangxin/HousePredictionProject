@@ -1,20 +1,15 @@
 library(glmnet)
-library(tree)
-library(randomForest)
 library(caret)
 
 #####################################RIDGE 
 
-num_columns = c('LotFrontage', 'MasVnrArea', 'LotArea', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 
-                'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'BsmtFullBath', 'BsmtHalfBath', 
-                'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces',
-                'GarageCars', 'GarageArea', 'TotalPorchSF', 'PoolArea', 'MiscVal','LogSalePrice')
-
-x = model.matrix(LogSalePrice ~ ., data_use[num_columns])[, -1] #Dropping the intercept column.
+data_use = Filter(is.numeric, data_use)
+data_use$SalePrice <-NULL
+x = model.matrix(LogSalePrice ~ ., data_use)[, -1] #Dropping the intercept column.
 y = data_use$LogSalePrice
 
 #splitting into training and testing data sets 
-train.index <- createDataPartition(data_use$SalePrice, p=0.8, list=FALSE)
+train.index <- createDataPartition(data_use$LogSalePrice, p=0.8, list=FALSE)
 data.train <- data_use[train.index,]
 data.test <- data_use[-train.index,]
 
@@ -29,21 +24,21 @@ cv.ridge.out = cv.glmnet(x[train.index, ], y[train.index], alpha = 0, nfolds = 5
 plot(cv.ridge.out, main = "Ridge Regression\n")
 
 bestlambda.ridge = cv.ridge.out$lambda.min
-bestlambda.ridge      #.1353048
+bestlambda.ridge      #.01
 log(bestlambda.ridge) 
 
 #refit RIDGE
 ridge.bestlambdatrain = predict(ridge.models, s = bestlambda.ridge, newx = x[-train.index, ])
 mean((ridge.bestlambdatrain - y.test)^2)  # 0.062675
 
-ridge.best_refit = glmnet(x, y, alpha = 0, lambda = bestlambda.ridge) #.05546
+ridge.best_refit = glmnet(x, y, alpha = 0, lambda = bestlambda.ridge) 
 
 #Coefficients
 predict(ridge.best_refit, s = bestlambda.ridge, type = "coefficients")
 
 # MSE
 ridge.bestlambda = predict(ridge.best_refit, s = bestlambda.ridge, newx = x)
-mean((ridge.bestlambda - y)^2)  # 0.03628087
+mean((ridge.bestlambda - y)^2)  # 0.00876
 
 
 ##############################################LASSO
@@ -62,7 +57,7 @@ bestlambda.lasso       # 0.01
 log(bestlambda.lasso)  # -4.60517
 #MSE
 lasso.bestlambdatrain = predict(lasso.models, s = bestlambda.lasso, newx = x[-train.index, ])
-mean((lasso.bestlambdatrain - y.test)^2) #.05188425
+mean((lasso.bestlambdatrain - y.test)^2) #.01573
 
 #Refit a model & Results
 lasso.best_refit = glmnet(x, y, alpha = 1)
@@ -72,30 +67,15 @@ predict(lasso.best_refit, type = "coefficients", s = bestlambda.lasso)
 
 # MSE
 lasso.bestlambda = predict(lasso.best_refit, s = bestlambda.lasso, newx = x)
-mean((lasso.bestlambda - y)^2)  # 0.03733635
-
-#################################FITTING TO ACTUAL TEST DATA 
-
-#use data_test cleaned from HousingPredictionCleanCode.R 
-
-num_columns = c('LotFrontage', 'MasVnrArea', 'LotArea', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 
-                'X1stFlrSF', 'X2ndFlrSF', 'LowQualFinSF', 'GrLivArea', 'BsmtFullBath', 'BsmtHalfBath', 
-                'FullBath', 'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr', 'TotRmsAbvGrd', 'Fireplaces',
-                'GarageCars', 'GarageArea', 'TotalPorchSF', 'PoolArea', 'MiscVal')
-
-x = model.matrix(~ ., data_test[num_columns])[, -1] #Dropping the intercept column
+mean((lasso.bestlambda - y)^2)  # 0.00894039
+mean((lasso.bestlambda - data_use$LogSalePrice)^2)  # 0.021423
 
 
+#################################FITTING TO ACTUAL TEST DATA #####################OUTPUT FILES
 
 
-#####################################ELASTIC NET
-
-
-
-
-
-
-####################################################OUTPUT FILES 
+data_test = Filter(is.numeric, data_test)
+x = model.matrix(~ ., data_test)[, -1] #Dropping the intercept column
 
 #LASSO
 lasso_official = predict(lasso.best_refit, s = bestlambda.lasso, newx = x)
@@ -103,7 +83,7 @@ lasso_official = predict(lasso.best_refit, s = bestlambda.lasso, newx = x)
 submission = exp(data.frame(lasso_official)) %>% rename(SalePrice = X1)
 # class(submission)
 # class(data_test)
-lassosubmission =c(data_test['Id'],submission)
+lassosubmission =data.frame(c(data_test['Id'],submission))
 
 write.csv(lassosubmission,'lasso.csv')
 
