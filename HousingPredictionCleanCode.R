@@ -88,6 +88,9 @@ cleandata<-function(data_use){
   
   data_use$Electrical <- ifelse(data_use$Electrical == 'FuseP','Other', data_use$Electrical)
   data_use$Electrical <- ifelse(data_use$Electrical == 'Mix','Other', data_use$Electrical)  
+  
+  #too much overlap with Garage Area
+  data_use$GarageCars <- NULL
   return(data_use)
 }
 
@@ -226,9 +229,7 @@ newfeatures<-function(data_use){
   data_use$TotalSF <- data_use$X1stFlrSF + data_use$X2ndFlrSF
   data_use$NumFloors <- ifelse(data_use$X2ndFlrSF==0,1,2)
   data_use$X1stFlrSF <- NULL
-  data_use$X2nsFlrSF <- NULL
-  
-  data_use
+  data_use$X2ndFlrSF <- NULL
   
   return(data_use)
   
@@ -342,7 +343,9 @@ fixdata <- function(data){
 removeobs <- function(data){
   #BEST TO REMOVE THESE 
   data$Exterior1st = ifelse(data$Exterior1st=="ImStucc",'VinylSd',data$Exterior1st)
-  data$Exterior1st = ifelse(data$Exterior1st=="Stone",'VinylSd',data$Exterior1st)  
+  data$Exterior1st = ifelse(data$Exterior1st=="Stone",'VinylSd',data$Exterior1st) 
+  
+  data = data %>% filter(Id!=524,Id!=1299)
   
   return(data)
 }

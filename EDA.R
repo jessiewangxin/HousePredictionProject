@@ -130,10 +130,12 @@ data_use %>%
   theme_bw()
 
 data_use %>%
-  select(MoYrSold) %>% 
-  gather() %>% 
-  ggplot(aes(value, fill='pink')) +
-  geom_histogram(stat='count') + 
+  select(MoSold,SalePrice) %>% 
+  group_by(MoSold) %>% 
+  mutate(count=1) %>% 
+  summarise(SalePrice = sum(SalePrice)/sum(count)) %>% 
+  ggplot(aes(x=MoSold,y=SalePrice)) +
+  geom_bar()
   xlab('') + 
   ylab('') +
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
@@ -188,5 +190,37 @@ glog
 
 #####################################################################################
 
+#RF visualization
 
+ggplot(data_use, aes(x=OverallQual, y=SalePrice)) +
+  geom_boxplot(aes(group=OverallQual), outlier.colour="red", outlier.shape=16,
+               outlier.size=2, notch=FALSE) + 
+  theme_classic()
+
+ggplot(data_use, aes(x=Neighborhood, y=SalePrice)) +
+  geom_boxplot(aes(group=OverallQual), outlier.colour="red", outlier.shape=16,
+               outlier.size=2, notch=FALSE) + 
+  theme_classic()
+
+ggplot(data_use, aes(x=TotalSF, y=SalePrice)) +
+  geom_point() + 
+  theme_classic()
+
+# outlier - 
+
+outlierTotalSF = data_use %>% filter(TotalSF>4000,SalePrice<250000)
+
+ggplot(data_use, aes(x=TotalBsmtSF, y=SalePrice)) +
+  geom_point() + 
+  theme_classic()
+
+ggplot(data_use, aes(x=GrLivArea, y=SalePrice)) +
+  geom_point() + 
+  theme_classic()
+
+
+ggplot(data_use, aes(x=YearRemodAdd, y=SalePrice)) +
+  geom_boxplot(aes(group=OverallQual), outlier.colour="red", outlier.shape=16,
+               outlier.size=2, notch=FALSE) + 
+  theme_classic()
 
