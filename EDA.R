@@ -137,14 +137,13 @@ data_use %>%
   ggplot(aes(x=MoSold,y=SalePrice)) +
   geom_bar()
   xlab('') + 
-  ylab('') +
-  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+  ylab('') 
 
 #Price by Neighborhood
 data_use %>%
-  select(Neighborhood, SalePrice) %>% 
+  select(Neighborhood, LogSalePrice) %>% 
   group_by(Neighborhood) %>% 
-  summarise(avg_price=mean(SalePrice)) %>% 
+  summarise(avg_price=mean(exp(LogSalePrice))) %>% 
   ggplot(aes(x = reorder(Neighborhood,avg_price), y = avg_price)) + 
   geom_col(aes(fill = avg_price), width = 0.7) + 
   coord_flip() +
@@ -224,3 +223,13 @@ ggplot(data_use, aes(x=YearRemodAdd, y=SalePrice)) +
                outlier.size=2, notch=FALSE) + 
   theme_classic()
 
+
+ggplot(data_use, aes(x=OverallQual, y=SalePrice)) +
+  geom_point() + 
+  theme_classic()
+
+
+
+ggplot(data_use, aes(x=Exterior1st, y=Exterior2nd)) +
+  geom_point() + 
+  theme_classic()

@@ -2,10 +2,9 @@
 library(dplyr)
 library(caret)
 library(tree)
+library(party)
 
-material_columns = c('MasVnrType', 'Exterior2nd', 'Exterior1st', 'StandardRoof', 'RoofStyle','LogSalePrice')
-
-data_tree = data_use[material_columns] %>% mutate_if(is.character, as.factor)
+data_tree = data_use %>% mutate_if(is.character, as.factor)
 
 
 #splitting into training and testing data sets 
@@ -56,7 +55,7 @@ plot(initial.tree)
 text(initial.tree, pretty = 0)
 
 #RoofStyle
-material_columns = c('RoofStyle','LogSalePrice')
+material_columns = c('HouseStyle','LogSalePrice')
 
 data_tree = data_use[material_columns] %>% mutate_if(is.character, as.factor)
 
@@ -73,4 +72,24 @@ text(initial.tree, pretty = 0)
 tree.predictions = predict(initial.tree, data.test)
 mean((tree.predictions - data.test$LogSalePrice)^2) 
 
+##########################party library tree
+output.tree <- ctree(
+  LogSalePrice ~ RoofStyle, 
+  data = data.train)
+
+# Plot the tree.
+plot(output.tree)
+
+output.tree <- ctree(LogSalePrice ~ Foundation, 
+  data = data.train)
+
+# Plot the tree.
+plot(output.tree)
+
+
+output.tree <- ctree(LogSalePrice ~ Exterior1st, 
+                     data = data.train)
+
+# Plot the tree.
+plot(output.tree)
 

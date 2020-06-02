@@ -1,9 +1,11 @@
 library(Hmisc)
 library(kknn)
 library(caret)
+library(dplyr)
 
 data_use = read.csv("train.csv", header = T, stringsAsFactors = F)
 data_test = read.csv("test.csv", header = T, stringsAsFactors = F)
+submission_id = data_test['Id'] 
 
   #imputes NA values that are not actually missing 
 changeNA <- function(data_use){
@@ -89,8 +91,6 @@ cleandata<-function(data_use){
   data_use$Electrical <- ifelse(data_use$Electrical == 'FuseP','Other', data_use$Electrical)
   data_use$Electrical <- ifelse(data_use$Electrical == 'Mix','Other', data_use$Electrical)  
   
-  #too much overlap with Garage Area
-  data_use$GarageCars <- NULL
   return(data_use)
 }
 
@@ -120,10 +120,6 @@ newfeatures<-function(data_use){
   #Paved_flag as a binary variable
   data_use$Paved_flag <- ifelse(data_use$PavedDrive=="N",0,1)
   data_use$PavedDrive <- NULL
-  
-  #Cond2Norm_flag as a binary variable
-  data_use$Cond2Norm_flag <- ifelse(data_use$Condition2!="Norm",0,1)
-  data_use$Condition2 <- NULL
   
   #MiscFeatures flag
   data_use$MiscFeatures <- ifelse(data_use$MiscFeature=="None",'N','Y')
@@ -171,10 +167,6 @@ newfeatures<-function(data_use){
                                                     ifelse(data_use$HeatingQC!='Gd', 5,4),3),2),1)
   data_use$HeatingQC <- NULL
   
-  #HeatingGASA - binary flag, Gas forced warm air furnace 
-  data_use$HeatingGASA_flag <- ifelse(data_use$Heating!="GasA",1,0)
-  data_use$Heating <- NULL
-  
   #BsmtExposure_flag as numeric variable
   data_use$BsmtExposure_flag <- ifelse(data_use$BsmtExposure!="NoBasement",
                                     ifelse(data_use$BsmtExposure!="No",
@@ -219,7 +211,8 @@ newfeatures<-function(data_use){
   #data_use$YrSold <- NULL
   
   #Total number of baths
-  data_use$TotalBath <- data_use$FullBath + .5* data_use$HalfBath + data_use$BsmtFullBath + .5*data_use$BsmtHalfBath
+  data_use$TotalFullBath <- data_use$FullBath + data_use$BsmtFullBath 
+  data_use$TotalHalfBath <- .5* data_use$HalfBath + .5*data_use$BsmtHalfBath
   data_use$FullBath <- NULL
   data_use$HalfBath <- NULL
   data_use$BsmtFullBath <- NULL
@@ -227,7 +220,6 @@ newfeatures<-function(data_use){
   
   data_use$MSSubClass <- NULL
   data_use$TotalSF <- data_use$X1stFlrSF + data_use$X2ndFlrSF
-  data_use$NumFloors <- ifelse(data_use$X2ndFlrSF==0,1,2)
   data_use$X1stFlrSF <- NULL
   data_use$X2ndFlrSF <- NULL
   
@@ -342,13 +334,36 @@ fixdata <- function(data){
 
 removeobs <- function(data){
   #BEST TO REMOVE THESE 
-  data$Exterior1st = ifelse(data$Exterior1st=="ImStucc",'VinylSd',data$Exterior1st)
-  data$Exterior1st = ifelse(data$Exterior1st=="Stone",'VinylSd',data$Exterior1st) 
+  #data$Exterior1st = ifelse(data$Exterior1st=="ImStucc",'VinylSd',data$Exterior1st)
+  #data$Exterior1st = ifelse(data$Exterior1st=="Stone",'VinylSd',data$Exterior1st) 
   
-  data = data %>% filter(Id!=524,Id!=1299)
+  data = data %>% filter(Id!=524,Id!=1299,Id!=1188,Id!=1025,Id!=1153)
   
   return(data)
 }
+
+removefeat <- function(data){
+  #BEST TO REMOVE THESE 
+  data$Id <- NULL 
+  data$BsmtFinSF2 <- NULL
+  data$BsmtUnfSF <- NULL
+  data$LowQualFinSF <- NULL
+  data$BedroomAbvGr <- NULL
+  data$GarageYrBlt <- NULL 
+  data$PoolArea <- NULL 
+  data$MiscVal <- NULL
+  #MoSold YrSold removed by Lasso
+  data$MasVnrArea <- NULL
+  data$Condition2 <- NULL
+  data$Heating <- NULL
+  data$Utilities <- NULL
+  data$Exterior2nd <- NULL
+  data$SalePrice <- NULL
+  data$GarageArea <- NULL
+  data$LotFrontage <- NULL
+  return(data)
+}
+
 
 data_use = changeNA(data_use)
 data_use = imputevalues(data_use)
@@ -357,6 +372,7 @@ data_use = cleandata(data_use)
 data_use = newfeatures(data_use)
 data_use = logsaleprice(data_use)
 data_use = removeobs(data_use)
+data_use = removefeat(data_use)
 
 #data_test = fixtest(data_test)
 data_test = changeNA(data_test)
@@ -366,5 +382,6 @@ data_test = imputevalues(data_test)
 data_test = cleandata(data_test)
 data_test = newfeatures(data_test)
 #data_test = imputetest(data_test)
+data_test = removefeat(data_test)
 
 

@@ -1,7 +1,6 @@
 library(glmnet)
 library(caret)
 
-#####################################RIDGE 
 
 data_use = Filter(is.numeric, data_use)
 data_use$SalePrice <-NULL
@@ -17,6 +16,8 @@ y.test = data.test$LogSalePrice
 
 
 grid = 10^seq(5, -2, length = 100)
+
+#####################################RIDGE 
 ridge.models = glmnet(x[train.index, ], y[train.index], alpha = 0, lambda = grid)
 plot(ridge.models, xvar = "lambda", label = TRUE, main = "Ridge Regression")
 
@@ -65,7 +66,7 @@ lasso.best_refit = glmnet(x, y, alpha = 1)
 # Coefficients
 predict(lasso.best_refit, type = "coefficients", s = bestlambda.lasso)
 
-# MSE
+ # MSE
 lasso.bestlambda = predict(lasso.best_refit, s = bestlambda.lasso, newx = x)
 mean((lasso.bestlambda - y)^2)  # 0.00894039
 mean((lasso.bestlambda - data_use$LogSalePrice)^2)  # 0.021423

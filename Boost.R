@@ -1,16 +1,9 @@
-library(randomForest)
 library(caret)
-library(tree)
 library(dplyr)
 library(tidyr)
 library(gbm)
 
 data_boost = data_use %>% mutate_if(is.character, as.factor)
-data_boost$SalePrice <- NULL 
-data_boost$MoYrSold <- NULL
-# data_boost$MSSubClass <- NULL #extra level in test 
-# data_boost$MSZoning <- NULL
-# data_rf$Utilities <- NULL
 
 #splitting into training and testing data sets 
 train.index <- createDataPartition(data_boost$LogSalePrice, p=0.8, list=FALSE)
@@ -47,7 +40,7 @@ for(i in depth){
 }
 
 list_error
-min(list_error) #depth = 5
+min(list_error) #depth = 4
 
  #testing different shrinkage rates 
 shrink_values = c(0.0001, 0.001, 0.01, 0.1, 0.2, 0.3)
@@ -58,7 +51,7 @@ for(i in 1:length(shrink_values)){
         boostmodel = gbm(LogSalePrice ~ ., data = data.train,
                          distribution = "gaussian",
                          n.trees = 10000,
-                         interaction.depth = 5,
+                         interaction.depth = 4,
                          shrinkage = shrink_values[i])
         
         prediction_value = data.frame(predict(boostmodel, newdata = data.test,n.trees = 10000))
@@ -66,7 +59,7 @@ for(i in 1:length(shrink_values)){
         colnames(prediction_value) <- 'prediction_value'
         
         boost_error = mean((prediction_value$prediction_value - data.test$LogSalePrice)^2)
-        
+        print(boost_error)
         list_error2[[i]] = boost_error
         
 }
@@ -79,7 +72,7 @@ bestboostmodel = gbm(LogSalePrice ~ ., data = data.train,
                      distribution = "gaussian",
                      n.trees = 10000,
                      interaction.depth = 5,
-                     shrinkage = 0.001)
+                     shrinkage = 0.01)
 
 n.trees = seq(from = 100, to = 10000, by = 100)
 
@@ -100,16 +93,16 @@ boost_error2 #1900  0.01421303
 
 bestboostmodel = gbm(LogSalePrice ~ ., data = data.train,
                      distribution = "gaussian",
-                     n.trees = 5000,
+                     n.trees = 2000,
                      interaction.depth = 5,
                      shrinkage = 0.001)
 
-boost.predictions = predict(boostmodel, data_test%>% mutate_if(is.character, as.factor), n.trees = 5000)
+boost.predictions = predict(boostmodel, data_test%>% mutate_if(is.character, as.factor), n.trees = 2000)
 submission = exp(data.frame(boost.predictions)) 
 submission$SalePrice = submission$boost.predictions
 submission$boost.predictions <- NULL
 
-boostsubmission =data.frame(c(data_test['Id'],submission %>% select(SalePrice)))
+boostsubmission =data.frame(c(submission_id,submission))
 
 write.csv(boostsubmission,'boostresults.csv')
 
